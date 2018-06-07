@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
 
         var adapter = CustomAdapter(users, applicationContext)
         rv.adapter = adapter
-        
+
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
@@ -50,4 +50,5 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+
 }
