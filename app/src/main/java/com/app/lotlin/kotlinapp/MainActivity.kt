@@ -1,17 +1,23 @@
 package com.app.lotlin.kotlinapp
 
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.LinearLayout
+import com.app.lotlin.kotlinapp.data.SearchRepositoryProvider
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
+    val compositeDisposable: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,18 +26,40 @@ class MainActivity : AppCompatActivity() {
 
         val rv = findViewById<RecyclerView>(R.id.recyclerView)
         rv.layoutManager = LinearLayoutManager(this, LinearLayout.VERTICAL, false)
-        val users = ArrayList<User>()
-        users.add(User("Paul", "Mr"))
-        users.add(User("Jane", "Miss"))
-        users.add(User("John", "Dr"))
-        users.add(User("Amy", "Mrs"))
-
-        var adapter = CustomAdapter(users, applicationContext)
-        rv.adapter = adapter
 
         fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
+            val repository = SearchRepositoryProvider.provideSearchRepository()
+
+            var add = compositeDisposable.add(
+                    repository.searchUsers("Lagos", "Java")
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribeOn(Schedulers.io())
+                            .subscribe({ result ->
+                                Log.d("Result", "There are ${result.items.size} Java developers in Lagos")
+
+
+                                val users = ArrayList<User>()
+
+                                users.add(User(
+                                        result.items.get(0).login,
+                                        result.items.get(0).id,
+                                        result.items.get(0).url,
+                                        result.items.get(0).html_url,
+                                        result.items.get(0).followers_url,
+                                        result.items.get(0).following_url,
+                                        result.items.get(0).starred_url,
+                                        result.items.get(0).gists_url,
+                                        result.items.get(0).type,
+                                        result.items.get(0).score))
+
+
+                                var adapter = CustomAdapter(users, applicationContext)
+                                rv.adapter = adapter
+                                rv.adapter.notifyDataSetChanged()
+                            }, { error ->
+                                error.printStackTrace()
+                            })
+            )
         }
     }
 
@@ -50,5 +78,4 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
 }
